@@ -1,0 +1,31 @@
+filebeat.inputs:
+
+  # ── Raw SSH auth logs ──────────────────────────────────────────────────────
+  - type: log
+    enabled: true
+    paths:
+      - /logs/a.log
+    scan_frequency: 1s
+    close_inactive: 10s
+    fields:
+      log_type: auth
+    fields_under_root: true
+
+  # ── Alert engine output ────────────────────────────────────────────────────
+  - type: log
+    enabled: true
+    paths:
+      - /logs/alerts.log
+    scan_frequency: 1s
+    close_inactive: 10s
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: alert
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+logging.level: info
+logging.to_files: false

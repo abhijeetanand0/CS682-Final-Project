@@ -1,0 +1,32 @@
+{
+  "66.66.66.66": {
+    "blocked_at": "2026-04-04T18:10:36.856774+00:00",
+    "reason": "Brute force: 15 attempts in 60s",
+    "severity": "HIGH"
+  },
+  "99.99.99.99": {
+    "blocked_at": "2026-04-04T18:10:57.039045+00:00",
+    "reason": "Brute force: 12 attempts in 60s",
+    "severity": "HIGH"
+  },
+  "6.6.6.6": {
+    "blocked_at": "2026-04-10T14:44:44.413530+00:00",
+    "reason": "Brute force: 15 attempts in 60s",
+    "severity": "HIGH"
+  },
+  "7.7.7.7": {
+    "blocked_at": "2026-04-10T15:28:11.920602+00:00",
+    "reason": "Brute force: 15 attempts in 60s",
+    "severity": "HIGH"
+  },
+  "48.173.11.200": {
+    "blocked_at": "2026-04-10T15:30:33.214639+00:00",
+    "reason": "Brute force: 43 attempts in 60s",
+    "severity": "HIGH"
+  },
+  "26.81.3.250": {
+    "blocked_at": "2026-04-10T16:56:26.499117+00:00",
+    "reason": "Brute force: 46 attempts in 60s",
+    "severity": "HIGH"
+  }
+}

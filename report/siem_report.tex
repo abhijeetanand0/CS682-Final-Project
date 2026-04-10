@@ -1,0 +1,1290 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{colortbl}
+\usepackage{makecell}
+
+% ── Colours ───────────────────────────────────────────────────────────────────
+\definecolor{primary}{HTML}{1A237E}
+\definecolor{accent}{HTML}{0D47A1}
+\definecolor{lightblue}{HTML}{E3F2FD}
+\definecolor{critical}{HTML}{B71C1C}
+\definecolor{high}{HTML}{E65100}
+\definecolor{medium}{HTML}{F57F17}
+\definecolor{infogreen}{HTML}{1B5E20}
+\definecolor{codebg}{HTML}{F5F5F5}
+\definecolor{tabhead}{HTML}{1A237E}
+\definecolor{rowalt}{HTML}{EEF2FF}
+
+% ── Section styling ───────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{primary}}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{accent}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{accent}}{\thesubsubsection}{1em}{}
+
+% ── Header / Footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{primary}{\textbf{SIEM Project Report}}}
+\lhead{\textcolor{accent}{Security Information \& Event Management}}
+\rfoot{\textcolor{primary}{Page \thepage}}
+\lfoot{\textcolor{accent}{\today}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ── Code listing ──────────────────────────────────────────────────────────────
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{accent},
+  keywordstyle=\color{primary}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{infogreen},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em
+}
+
+% ── Coloured boxes ────────────────────────────────────────────────────────────
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{infobox}[1][]{
+  colback=lightblue,colframe=accent,
+  fonttitle=\bfseries,title=#1,breakable}
+\newtcolorbox{critbox}[1][]{
+  colback=red!8,colframe=critical,
+  fonttitle=\bfseries\color{critical},title=#1,breakable}
+\newtcolorbox{rulebox}[1][]{
+  colback=yellow!10,colframe=medium,
+  fonttitle=\bfseries\color{medium},title=#1,breakable}
+
+% ── Hyperref ──────────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=accent,citecolor=accent}
+
+% ── Helpers ───────────────────────────────────────────────────────────────────
+\newcommand{\file}[1]{\texttt{\color{accent}#1}}
+\newcommand{\field}[1]{\texttt{#1}}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Title Page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \pagecolor{primary}\color{white}
+  \vspace*{2.5cm}
+  \begin{center}
+    {\fontsize{13}{15}\selectfont\texttt{Software Engineering Project — Final Report}}\\[0.6cm]
+    \rule{\linewidth}{0.5pt}\\[1.2cm]
+    {\fontsize{38}{44}\selectfont\bfseries SIEM}\\[0.5cm]
+    {\fontsize{20}{24}\selectfont Security Information \&\\[0.3cm]Event Management System}\\[1.2cm]
+    \rule{\linewidth}{0.5pt}\\[1.5cm]
+    {\large
+      A real-time threat detection and log analysis platform\\[0.3cm]
+      powered by the Elastic Stack (ELK) with automated\\[0.3cm]
+      alert generation, anomaly detection rules, and\\[0.3cm]
+      an interactive Kibana security dashboard.
+    }\\[2.5cm]
+    \begin{tabular}{ll}
+      \textbf{Team}  & SIEM Project Team \\[0.4cm]
+      \textbf{Stack} & Python \textbullet\ Elasticsearch \textbullet\ Logstash
+                       \textbullet\ Kibana \textbullet\ Filebeat \textbullet\ Docker \\[0.4cm]
+      \textbf{Date}  & \today \\
+    \end{tabular}
+  \end{center}
+  \vfill
+  \begin{center}
+    \small\textit{Submitted in partial fulfilment of the requirements for the\\
+    Software Engineering module}
+  \end{center}
+\end{titlepage}
+\nopagecolor
+
+% ── Table of Contents ─────────────────────────────────────────────────────────
+\newpage
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Abstract}
+
+Modern organisations generate hundreds of thousands of log events every day.
+Without automated correlation and analysis, security incidents go undetected
+until the damage is catastrophic. This project delivers a fully operational
+\textbf{Security Information and Event Management (SIEM)} system that ingests
+SSH authentication logs in real time, parses them through a structured
+enrichment pipeline, detects threat patterns using five detection rules, and
+surfaces everything through live Kibana dashboards.
+
+\subsection*{Problem Statement}
+
+System administrators have traditionally relied on manual log inspection to
+identify unauthorised access attempts. This approach fails at scale: a
+brute-force campaign can exhaust credentials in under sixty seconds; a
+coordinated botnet attack generates thousands of events per minute; and
+lateral movement by an attacker who has already gained initial access leaves
+only subtle traces across multiple log files.
+
+A purpose-built SIEM reduces \textbf{Mean Time To Detect (MTTD)} from hours —
+or never — to under fifteen seconds by automating correlation and alerting.
+
+\subsection*{Target Users}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Security Admin} — primary user; monitors live dashboards,
+        reviews audit trails, and manages the IP blocklist.
+  \item \textbf{System Operator} — views event feeds to distinguish normal
+        from abnormal activity without modifying any configuration.
+  \item \textbf{Analyst / Auditor} — queries historical event data for
+        compliance reporting and incident post-mortems.
+\end{itemize}
+
+\subsection*{Key Implemented Features}
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Realistic log simulation} — \file{logg\_gen.py} produces
+        convincing SSH traffic: fixed recurring actor IPs, random attacker
+        pools, burst-attack state machine, and forced alert scenarios every
+        10 seconds to guarantee detectable events.
+  \item \textbf{Full ELK ingestion pipeline} — Filebeat tails log files and
+        ships lines to Logstash, which applies 14 Grok patterns and routes
+        enriched documents into daily Elasticsearch indices.
+  \item \textbf{Python alert engine} — \file{alerts.py} polls Elasticsearch
+        every 10 seconds, evaluates five rule-based detectors, and writes
+        structured JSON alerts back into the same pipeline.
+  \item \textbf{Automatic IP blocklist} — HIGH and CRITICAL alerts
+        auto-populate \file{blocklist.json} with timestamp, reason, and
+        severity.
+  \item \textbf{Kibana security dashboards} — Two fully configured dashboards
+        (SSH Logs Overview and Alerts \& Threats) with 14 visualisation panels
+        covering metrics, timelines, charts, and sortable audit tables.
+\end{enumerate}
+
+\subsection*{Top Challenges}
+
+\begin{itemize}[leftmargin=2em]
+  \item Writing Grok patterns that correctly parse all 14 SSH log variants,
+        including services with hyphens (\texttt{systemd-logind}), lines
+        with and without PIDs, and PAM multi-token formats.
+  \item Closing the feedback loop: alert JSON written to a log file is
+        re-ingested by Filebeat through the \emph{same} Logstash pipeline
+        into a \emph{separate} index — keeping dashboards unified without
+        polluting raw log data.
+  \item Reconstructing accurate \field{@timestamp} values from SSH log lines
+        that carry no year field, across midnight and year boundaries, in the
+        correct timezone.
+\end{itemize}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Requirements Specification}
+
+\subsection{Functional Requirements}
+
+\begin{longtable}{>{\bfseries\small}p{0.8cm} >{\small}p{3.8cm} >{\small}p{8.5cm}}
+  \toprule
+  \rowcolor{tabhead}
+  \textcolor{white}{\textbf{ID}} &
+  \textcolor{white}{\textbf{Feature}} &
+  \textcolor{white}{\textbf{Description}} \\
+  \midrule\endhead
+  F1 & Log Collection &
+    System ingests SSH auth log lines from a watched file within 5 seconds
+    of being written, using Filebeat with a 5-second scan frequency. \\
+  \rowcolor{rowalt}
+  F2 & Log Parsing &
+    Every ingested line is decomposed into structured fields: \field{src\_ip},
+    \field{username}, \field{event\_type}, \field{severity}, \field{@timestamp},
+    \field{service}, \field{pid}, \field{server}. \\
+  F3 & Event Classification &
+    Fourteen distinct SSH event types are recognised and labelled. Unknown
+    lines are tagged \field{unparsed} without dropping them. \\
+  \rowcolor{rowalt}
+  F4 & Severity Enrichment &
+    Each event is assigned a severity level (info / warning / high / critical)
+    based on event type and username. Root logins are always critical. \\
+  F5 & Alert Generation &
+    Five detection rules fire automatically when configurable thresholds are
+    exceeded. Alerts are written as structured JSON for re-ingestion. \\
+  \rowcolor{rowalt}
+  F6 & Duplicate Suppression &
+    A 60-second per-IP cooldown prevents the same alert rule firing repeatedly
+    for the same ongoing incident. \\
+  F7 & IP Blocklist &
+    HIGH and CRITICAL alerts auto-add the attacker IP to a persistent JSON
+    blocklist with blocked timestamp and reason. \\
+  \rowcolor{rowalt}
+  F8 & Admin Dashboard &
+    Kibana provides real-time charts, metric cards, time-series graphs, and
+    sortable event tables — no coding required to use. \\
+  F9 & Audit Trail &
+    All events are queryable by time range, IP address, username, and severity,
+    providing a full historical record of system activity. \\
+  \rowcolor{rowalt}
+  F10 & Alert Index &
+    Fired alerts are stored in a separate \field{siem-alerts-*} index,
+    queryable independently of raw log data. \\
+  \bottomrule
+  \caption{Functional Requirements}
+\end{longtable}
+
+\subsection{Non-Functional Requirements}
+
+\begin{longtable}{>{\bfseries\small}p{0.8cm} >{\small}p{3cm} >{\small}p{9.5cm}}
+  \toprule
+  \rowcolor{tabhead}
+  \textcolor{white}{\textbf{ID}} &
+  \textcolor{white}{\textbf{Category}} &
+  \textcolor{white}{\textbf{Requirement}} \\
+  \midrule\endhead
+  NF1 & Performance &
+    End-to-end latency from log write to Kibana visibility is under 15 seconds
+    under normal load (Filebeat scan: 5s + Logstash processing: $<$1s +
+    Elasticsearch indexing: $<$1s). \\
+  \rowcolor{rowalt}
+  NF2 & Scalability &
+    Elasticsearch single-node handles $>$10,000 events/day in development.
+    Production scaling via replica shards and Logstash worker threads. \\
+  NF3 & Security &
+    No plaintext credentials in source code. \texttt{xpack.security} disabled
+    for development only — Keycloak integration is the planned production path. \\
+  \rowcolor{rowalt}
+  NF4 & Usability &
+    Kibana dashboards are readable by a non-Elasticsearch expert. Severity is
+    colour-coded: red (critical), orange (high), yellow (medium), green (info). \\
+  NF5 & Reliability &
+    Docker health-checks on Elasticsearch ensure Logstash and Filebeat only
+    start after the database is accepting requests. \\
+  \rowcolor{rowalt}
+  NF6 & Portability &
+    The entire stack (4 containers) launches with a single
+    \texttt{docker compose up} command on any Docker-capable host. \\
+  NF7 & Maintainability &
+    Detection rules are defined in a single \field{RULES} dictionary in
+    \file{alerts.py}. Adding a new rule requires adding one dict entry and
+    one function — no schema changes. \\
+  \bottomrule
+  \caption{Non-Functional Requirements}
+\end{longtable}
+
+\subsection{Traceability Matrix}
+
+\begin{center}
+\begin{tabular}{p{4.5cm}p{4cm}p{5cm}}
+  \toprule
+  \textbf{Requirement} & \textbf{Component} & \textbf{File} \\
+  \midrule
+  F1 — Log Collection         & Filebeat            & \file{filebeat/filebeat.yml} \\
+  F2/F3/F4 — Parse \& Enrich  & Logstash            & \file{logstash/pipeline/siem.conf} \\
+  F5/F6 — Alert Generation    & Alert Engine        & \file{alerts.py} \\
+  F7 — Blocklist              & Alert Engine        & \file{logs/blocklist.json} \\
+  F8 — Dashboard              & Kibana 8.13         & Index pattern \field{siem-logs-*} \\
+  F9 — Audit Trail            & Elasticsearch       & Index \field{siem-logs-*} \\
+  F10 — Alert Index           & Logstash + ES       & Index \field{siem-alerts-*} \\
+  NF5 — Reliability           & Docker Compose      & \file{docker-compose.yml} \\
+  NF7 — Maintainability       & Alert Engine        & \file{alerts.py} \texttt{RULES} dict \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{System Design}
+
+\subsection{High-Level Architecture}
+
+The system follows a \textbf{unidirectional pipeline architecture}. Data flows
+through discrete, loosely-coupled stages. No component has knowledge of the
+component two steps ahead of it, making each stage independently replaceable.
+
+\begin{center}
+\begin{tcolorbox}[colback=lightblue,colframe=accent,width=\linewidth,
+  title={\textbf{End-to-End Data Flow}},fonttitle=\bfseries]
+\small\centering
+\begin{tabular}{c}
+  \textbf{[1] Data Generation} \\
+  \file{logg\_gen.py} writes SSH log lines to \file{logs/a.log} \\
+  \file{alerts.py} writes JSON alerts to \file{logs/alerts.log} \\[0.5em]
+  $\Big\downarrow$ \\[0.3em]
+  \textbf{[2] Collection — Filebeat (port 5044)} \\
+  Tails both log files; tags \field{log\_type: auth} or \field{log\_type: alert} \\[0.5em]
+  $\Big\downarrow$ \\[0.3em]
+  \textbf{[3] Processing — Logstash} \\
+  Grok parse $\rightarrow$ Classify $\rightarrow$ Enrich $\rightarrow$ Timestamp $\rightarrow$ Route \\[0.5em]
+  $\Big\downarrow$ \hspace{4cm} $\Big\downarrow$ \\[0.2em]
+  \textbf{siem-logs-YYYY.MM.dd} \hspace{2cm} \textbf{siem-alerts-YYYY.MM.dd} \\
+  \textit{(Elasticsearch)} \hspace{3.2cm} \textit{(Elasticsearch)} \\[0.5em]
+  $\Big\uparrow$ polls every 10s \hspace{2.5cm} $\Big\uparrow$ re-ingested by Filebeat \\[0.2em]
+  \textbf{[4] Detection — alerts.py} $\xrightarrow{\text{writes}}$ \file{logs/alerts.log} \\
+  Also writes $\rightarrow$ \file{logs/blocklist.json} \\[0.5em]
+  $\Big\downarrow$ \\[0.3em]
+  \textbf{[5] Visualisation — Kibana (port 5601)} \\
+  SSH Logs Overview dashboard \quad Alerts \& Threats dashboard \\
+\end{tabular}
+\end{tcolorbox}
+\end{center}
+
+\textbf{Why a pipeline architecture?} Each stage communicates only through
+well-defined interfaces (a log file, a TCP port, an Elasticsearch index). This
+means:
+\begin{itemize}[leftmargin=2em,topsep=2pt]
+  \item Logstash can be swapped for OpenSearch Ingest without touching
+        Filebeat or the alert engine.
+  \item The alert engine is a pure Python process — no framework coupling —
+        making it trivial to unit test or replace with a different language.
+  \item The \textbf{feedback loop} (alerts re-entering the pipeline as
+        structured documents) is elegant: the same Logstash pipeline that
+        handles raw logs also handles JSON alerts, keeping Kibana unified.
+\end{itemize}
+
+\subsection{Component Descriptions}
+
+\begin{center}
+\begin{tabular}{|p{3.2cm}|p{2.8cm}|p{7.5cm}|}
+  \hline
+  \rowcolor{tabhead}
+  \textcolor{white}{\textbf{Layer}} &
+  \textcolor{white}{\textbf{Component}} &
+  \textcolor{white}{\textbf{Responsibility}} \\
+  \hline
+  Data Generation   & \file{logg\_gen.py}   & Simulates realistic SSH traffic with fixed IPs, random attacker pools, burst events, forced alert scenarios \\
+  \hline
+  \rowcolor{rowalt}
+  Data Generation   & \file{log\_generator.py} & Legacy simple generator (1 line/3s, 70\% fail) — superseded by \file{logg\_gen.py} \\
+  \hline
+  Collection        & Filebeat 8.13         & Tails log files; ships lines to Logstash; maintains read-position registry across restarts \\
+  \hline
+  \rowcolor{rowalt}
+  Processing        & Logstash 8.13         & Grok parsing, conditional classification (14 branches), timestamp normalisation, index routing \\
+  \hline
+  Storage           & Elasticsearch 8.13    & Inverted-index document store; daily time-based indices; provides aggregation API for alert engine \\
+  \hline
+  \rowcolor{rowalt}
+  Detection         & \file{alerts.py}      & Polls Elasticsearch every 10s; evaluates 5 rules; writes JSON alerts; maintains IP blocklist \\
+  \hline
+  Visualisation     & Kibana 8.13           & Two dashboards with 14 panels; Discover for ad-hoc queries; index pattern management \\
+  \hline
+  Orchestration     & Docker Compose        & Defines all 4 containers, their networks, volumes, health-checks, and startup ordering \\
+  \hline
+\end{tabular}
+\end{center}
+
+\subsection{Data Model}
+
+\subsubsection*{siem-logs-* Elasticsearch Document Schema}
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{1.8cm}p{7.8cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Description / Example} \\
+  \midrule
+  \field{@timestamp}      & date    & Reconstructed from log fields; normalised to UTC (source: IST) \\
+  \field{event\_type}     & keyword & \texttt{failed\_password}, \texttt{accepted\_publickey}, \texttt{sudo\_session} \ldots \\
+  \field{severity}        & keyword & \texttt{info}, \texttt{warning}, \texttt{high}, \texttt{critical} \\
+  \field{src\_ip}         & keyword & Source IP of the connection attempt \\
+  \field{username}        & keyword & Targeted account name \\
+  \field{auth\_method}    & keyword & \texttt{password} or \texttt{publickey} \\
+  \field{login\_result}   & keyword & \texttt{success} or \texttt{failure} \\
+  \field{user\_validity}  & keyword & \texttt{valid} or \texttt{invalid} (for failed logins) \\
+  \field{server}          & keyword & Hostname of the target server (e.g.\ \texttt{server}) \\
+  \field{service}         & keyword & Source service: \texttt{sshd}, \texttt{sudo}, \texttt{CRON}, \texttt{systemd-logind} \\
+  \field{pid}             & integer & Process ID of the logging service \\
+  \field{src\_port}       & integer & Ephemeral source port of the connection \\
+  \field{key\_type}       & keyword & RSA / ECDSA / ED25519 (publickey logins only) \\
+  \field{key\_fingerprint}& keyword & SHA256 fingerprint (publickey logins only) \\
+  \field{log\_type}       & keyword & Always \texttt{auth} for raw SSH logs \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{siem-alerts-* Elasticsearch Document Schema}
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{1.8cm}p{7.8cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Description / Example} \\
+  \midrule
+  \field{@timestamp}        & date    & UTC time the alert was fired by the engine \\
+  \field{rule}              & keyword & \texttt{BRUTE\_FORCE}, \texttt{BURST\_ATTACK}, \texttt{ROOT\_LOGIN} \ldots \\
+  \field{severity}          & keyword & \texttt{MEDIUM}, \texttt{HIGH}, \texttt{CRITICAL} \\
+  \field{src\_ip}           & keyword & IP that triggered the rule \\
+  \field{message}           & text    & Human-readable explanation (e.g.\ ``15 failed logins in 60s'') \\
+  \field{failed\_attempts}  & integer & Count of events (brute force / burst rules) \\
+  \field{window\_sec}       & integer & Detection window in seconds \\
+  \field{targeted\_users}   & keyword & Usernames targeted in the attack window \\
+  \field{log\_type}         & keyword & Always \texttt{alert} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Design Trade-offs}
+
+\begin{center}
+\begin{tabular}{p{3cm}p{4.5cm}p{4cm}p{2cm}}
+  \toprule
+  \textbf{Decision} & \textbf{Choice Made} & \textbf{Alternative} & \textbf{Why} \\
+  \midrule
+  Log shipper      & Filebeat (lightweight, binary) & Fluentd (more plugins) & Lower memory; purpose-built for Elastic \\
+  Storage          & Elasticsearch (aggregations) & PostgreSQL & No SQL aggregation pipeline; ES is purpose-built for log analytics \\
+  Alert engine     & Python daemon & Kibana Watcher & Watcher uses complex YAML/JSON rule DSL; Python is testable and readable \\
+  Alert feedback   & Re-ingest via Filebeat & Separate index writer & Keeps the pipeline uniform; no extra code path \\
+  Index strategy   & Daily indices \texttt{siem-logs-YYYY.MM.dd} & Single index & Easy data retention; old indices deleted without rebuild \\
+  Auth             & None (dev only) & Keycloak RBAC & Scope: demonstrates detection pipeline, not auth management \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Implementation Details}
+
+\subsection{Tech Stack Justification}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Python 3} — Alert engine and log generator. The Elasticsearch
+        Python client provides a clean API for aggregation queries; the
+        standard library covers JSON, datetime, and pathlib without extra
+        dependencies.
+  \item \textbf{Elastic Stack 8.13 (ELK)} — Industry-standard SIEM backbone.
+        Grok, aggregations, Kibana Lens, and the Beats ecosystem are
+        purpose-built for log analytics at scale. The 8.x series added native
+        security features and improved Kibana dashboarding.
+  \item \textbf{Filebeat} — Ultra-lightweight log shipper (written in Go).
+        Maintains a read-position registry so no lines are skipped or
+        duplicated across restarts.
+  \item \textbf{Docker Compose} — Single-command reproducible environment.
+        Health-check \texttt{depends\_on} enforces Elasticsearch readiness
+        before dependent services start, eliminating startup race conditions.
+\end{itemize}
+
+\subsection{Module: logg\_gen.py — Realistic Traffic Simulator}
+
+This is the most sophisticated module in the project. It produces SSH log
+traffic that is indistinguishable from a real server under attack, ensuring
+the entire detection pipeline always has meaningful data to process.
+
+\subsubsection*{Fixed IP Scheduler}
+Seven known actors are defined with type, schedule interval range, and
+success rate:
+
+\begin{center}
+\begin{tabular}{p{3.2cm}p{1.8cm}p{2.8cm}p{2cm}p{3cm}}
+  \toprule
+  \textbf{IP} & \textbf{Type} & \textbf{Interval (s)} & \textbf{Success \%} & \textbf{Behaviour} \\
+  \midrule
+  \texttt{10.0.1.25}       & internal & 60--180   & 92\% & Corp workstation \\
+  \texttt{192.168.1.105}   & internal & 90--240   & 88\% & Corp workstation \\
+  \texttt{172.16.0.55}     & vpn      & 120--300  & 85\% & VPN remote user \\
+  \texttt{34.201.12.45}    & legit    & 180--480  & 80\% & Cloud deploy host \\
+  \texttt{185.220.101.12}  & tor      & 30--90    & 4\%  & Persistent Tor attacker \\
+  \texttt{45.155.205.233}  & botnet   & 20--60    & 3\%  & Botnet node \\
+  \texttt{103.214.132.55}  & scanner  & 15--45    & 2\%  & Port/credential scanner \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+A \texttt{FixedIPScheduler} class stores \texttt{next\_fire} timestamps and
+re-schedules each IP after firing, randomised within its interval band.
+
+\subsubsection*{Random IP Pools}
+At startup, 40 attacker IPs and 10 legit IPs are generated from a function
+that avoids RFC1918, loopback, and reserved ranges. Fresh IPs every session
+prevent simple pattern matching from defeating the detector.
+
+\subsubsection*{Burst State Machine}
+A \texttt{BurstState} object tracks active burst campaigns. On each tick,
+a 1.5\% random chance triggers a burst of 20--60 failed logins from one
+attacker IP in rapid succession. The burst flag pauses all other event
+generation until the campaign is complete.
+
+\subsubsection*{Forced Alert Scenarios}
+Every 10 seconds, two scenarios from a rotating list fire deterministically,
+guaranteeing that the alert engine always has threshold-crossing events to
+detect regardless of random traffic patterns:
+
+\begin{center}
+\begin{tabular}{p{4cm}p{5cm}p{4.5cm}}
+  \toprule
+  \textbf{Scenario} & \textbf{What It Does} & \textbf{Rule It Triggers} \\
+  \midrule
+  \texttt{scenario\_brute\_force}  & 15 failed logins from one IP in 1.5s   & \texttt{BRUTE\_FORCE} \\
+  \texttt{scenario\_burst}         & 35 failed logins from \texttt{99.99.99.99} in 2s & \texttt{BURST\_ATTACK} \\
+  \texttt{scenario\_root\_login}   & \texttt{Accepted password for root}      & \texttt{ROOT\_LOGIN} \\
+  \texttt{scenario\_preauth\_storm}& 6 preauth disconnects from one IP in 0.6s & \texttt{PREAUTH\_STORM} \\
+  \texttt{scenario\_max\_auth}     & \texttt{max authentication attempts exceeded} & \texttt{MAX\_AUTH\_EXCEEDED} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{14 Log Line Builders}
+Each function produces a syntactically correct syslog-format string with
+the custom \texttt{YYYY Mon DD HH:MM:SS} timestamp prefix required by the
+Logstash date filter:
+
+\begin{lstlisting}[language=Python, caption=Sample log line builders from logg\_gen.py]
+def line_accepted_password(user, ip, port):
+    return (f"{ts()} server sshd[{next_pid()}]: "
+            f"Accepted password for {user} from {ip} port {port} ssh2")
+
+def line_failed(user, ip, port, invalid=False):
+    tag = "invalid user " if invalid else ""
+    return (f"{ts()} server sshd[{next_pid()}]: "
+            f"Failed password for {tag}{user} from {ip} port {port} ssh2")
+
+def line_accepted_pubkey(user, ip, port):
+    kt = random.choice(["RSA", "ECDSA", "ED25519"])
+    return (f"{ts()} server sshd[{next_pid()}]: Accepted publickey for "
+            f"{user} from {ip} port {port} ssh2: {kt} SHA256:{sha256()}")
+\end{lstlisting}
+
+\subsection{Module: logstash/pipeline/siem.conf — Parsing Pipeline}
+
+The Logstash pipeline is the structural core of the system. It transforms
+free-text log lines into richly-typed Elasticsearch documents.
+
+\subsubsection*{Stage 1 — Alert bypass}
+If \field{log\_type == alert}, the document is a pre-parsed JSON object
+from the alert engine. Logstash skips all Grok processing and routes it
+directly to \field{siem-alerts-*}.
+
+\subsubsection*{Stage 2 — Base Grok parse}
+Two patterns cover the syslog envelope (with and without PID bracket):
+
+\begin{lstlisting}[language=bash, caption=Base Grok patterns in siem.conf]
+# With PID: "2026 Apr 10 14:22:05 server sshd[10234]: ..."
+"^%{YEAR:log_year} %{MONTH:log_month} %{MONTHDAY:log_day}
+ %{TIME:log_time} %{HOSTNAME:server}
+ (?<service>[^\[\s]+)\[%{NUMBER:pid}\]: %{GREEDYDATA:log_message}$"
+
+# Without PID: "2026 Apr 10 14:22:05 server sudo: ..."
+"^%{YEAR:log_year} %{MONTH:log_month} %{MONTHDAY:log_day}
+ %{TIME:log_time} %{HOSTNAME:server}
+ (?<service>[^\[\s:]+): %{GREEDYDATA:log_message}$"
+\end{lstlisting}
+
+\subsubsection*{Stage 3 — 14-branch event classification}
+
+\begin{center}
+\begin{tabular}{p{4.5cm}p{2cm}p{6.5cm}}
+  \toprule
+  \textbf{event\_type} & \textbf{Severity} & \textbf{Match Pattern} \\
+  \midrule
+  \texttt{accepted\_password}    & info/critical* & \texttt{Accepted password for ...} \\
+  \texttt{accepted\_publickey}   & info/critical* & \texttt{Accepted publickey for ...} \\
+  \texttt{failed\_password} (invalid) & warning  & \texttt{Failed password for invalid user ...} \\
+  \texttt{failed\_password} (valid)   & high     & \texttt{Failed password for ...} \\
+  \texttt{max\_auth\_exceeded}   & high           & \texttt{maximum authentication attempts exceeded} \\
+  \texttt{pam\_failure}          & warning        & \texttt{PAM N more authentication failure} \\
+  \texttt{preauth\_disconnect}   & warning        & \texttt{Disconnected from invalid user ... [preauth]} \\
+  \texttt{session\_disconnect}   & info           & \texttt{Disconnected from user ...} \\
+  \texttt{connection\_closed}    & info           & \texttt{Connection closed by ...} \\
+  \texttt{sudo\_session}         & info           & \texttt{pam\_unix(sudo:session)} \\
+  \texttt{session\_opened}       & info           & \texttt{New session for user} \\
+  \texttt{session\_closed}       & info           & \texttt{Session removed for user} \\
+  \texttt{cron\_job}             & info           & \texttt{service == CRON} \\
+  \texttt{other}                 & info           & Parsed envelope, unclassified message \\
+  \bottomrule
+  \multicolumn{3}{l}{\small *critical when \texttt{username == root}}
+\end{tabular}
+\end{center}
+
+\subsubsection*{Stage 4 — Timestamp reconstruction}
+SSH logs carry no year field. The pipeline concatenates extracted date
+parts and parses them with the \texttt{date} filter in IST timezone,
+overwriting \field{@timestamp} with the correct UTC value:
+
+\begin{lstlisting}[language=bash, caption=Logstash timestamp handling]
+mutate {
+  add_field => { "log_timestamp" => "%{log_year} %{log_month}
+                  %{log_day} %{log_time}" }
+}
+date {
+  match    => ["log_timestamp", "yyyy MMM dd HH:mm:ss"]
+  target   => "@timestamp"
+  timezone => "Asia/Kolkata"
+}
+\end{lstlisting}
+
+\subsubsection*{Stage 5 — Routing}
+The \field{log\_type} field set by Filebeat routes output:
+\begin{itemize}[leftmargin=2em,topsep=2pt]
+  \item \field{log\_type: auth} $\rightarrow$ \field{siem-logs-YYYY.MM.dd}
+  \item \field{log\_type: alert} $\rightarrow$ \field{siem-alerts-YYYY.MM.dd}
+\end{itemize}
+
+\subsection{Module: alerts.py — Detection Engine}
+
+\begin{rulebox}[Detection Rules Configuration]
+\begin{lstlisting}[language=Python]
+RULES = {
+    "BRUTE_FORCE":       {"failed_in_window": 10, "window_sec": 60,  "severity": "HIGH"},
+    "BURST_ATTACK":      {"failed_in_window": 30, "window_sec": 60,  "severity": "CRITICAL"},
+    "ROOT_LOGIN":        {"severity": "CRITICAL"},
+    "MAX_AUTH_EXCEEDED": {"severity": "HIGH"},
+    "PREAUTH_STORM":     {"count": 5, "window_sec": 60, "severity": "MEDIUM"},
+}
+POLL_INTERVAL = 10   # seconds between full rule evaluation
+LOOKBACK      = 120  # seconds of history for single-event rules
+COOLDOWN      = 60   # seconds before same rule fires again for same IP
+\end{lstlisting}
+\end{rulebox}
+
+\subsubsection*{Rule Evaluation Flow}
+Every 10 seconds the main loop calls all five rule functions in sequence.
+Each function issues an Elasticsearch aggregation query, checks results
+against its threshold, verifies the per-IP cooldown has expired, then
+calls \texttt{write\_alert()} if the condition is met.
+
+\begin{center}
+\begin{tabular}{p{3.8cm}p{5.5cm}p{2.2cm}p{2cm}}
+  \toprule
+  \textbf{Rule} & \textbf{Elasticsearch Query} & \textbf{Threshold} & \textbf{Action} \\
+  \midrule
+  BRUTE\_FORCE       & Agg: failed logins by IP in 60s    & $\geq 10$ / IP & Alert + Block \\
+  BURST\_ATTACK      & Agg: failed logins by IP in 60s    & $\geq 30$ / IP & Alert + Block \\
+  ROOT\_LOGIN        & Filter: accepted + username=root   & Any            & Alert \\
+  MAX\_AUTH\_EXCEEDED & Filter: max\_auth\_exceeded events & Any            & Alert \\
+  PREAUTH\_STORM     & Agg: preauth disconnects by IP     & $\geq 5$ / IP  & Alert \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{Alert Document Structure}
+Each alert is written as a single JSON line to \file{logs/alerts.log}:
+
+\begin{lstlisting}[language=Python, caption=Sample alert document]
+{
+  "timestamp":       "2026-04-10T09:15:32.441Z",
+  "rule":            "BRUTE_FORCE",
+  "severity":        "HIGH",
+  "src_ip":          "6.6.6.6",
+  "failed_attempts": 15,
+  "window_sec":      60,
+  "targeted_users":  ["admin", "root"],
+  "message":         "15 failed logins in 60s"
+}
+\end{lstlisting}
+
+\subsubsection*{IP Blocklist}
+\file{blocklist.json} accumulates blocked IPs across sessions:
+
+\begin{lstlisting}[language=Python, caption=Sample blocklist.json]
+{
+  "6.6.6.6": {
+    "blocked_at": "2026-04-10T09:15:32Z",
+    "reason":     "Brute force: 15 attempts in 60s",
+    "severity":   "HIGH"
+  }
+}
+\end{lstlisting}
+
+\subsection{Repository Structure}
+
+\begin{lstlisting}[language=bash, caption=Project file tree]
+siem-project/
+├── docker-compose.yml          # 4-container infrastructure definition
+├── logg_gen.py                 # Realistic SSH traffic simulator (primary)
+├── log_generator.py            # Legacy simple generator (superseded)
+├── alerts.py                   # Python detection engine + blocklist
+├── logs/
+│   ├── a.log                   # SSH log sink  (Filebeat input 1)
+│   ├── alerts.log              # Alert JSON sink (Filebeat input 2)
+│   └── blocklist.json          # Auto-blocked IPs (persistent)
+├── filebeat/
+│   └── filebeat.yml            # Two inputs + Logstash output
+└── logstash/
+    ├── config/logstash.yml     # Logstash settings
+    └── pipeline/siem.conf      # Full Grok pipeline (14 event types)
+\end{lstlisting}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Kibana Dashboard Design}
+
+Both dashboards use the wildcard index patterns \field{siem-logs-*} and
+\field{siem-alerts-*} so they work across all daily indices without
+reconfiguration. The default time range is set to \textbf{Last 24 hours}
+and stored with each dashboard.
+
+\subsection{Dashboard 1 — SSH Logs Overview}
+
+\begin{center}
+\begin{tabular}{p{4cm}p{2.5cm}p{2cm}p{4.5cm}}
+  \toprule
+  \textbf{Panel} & \textbf{Chart Type} & \textbf{Index} & \textbf{Key Config} \\
+  \midrule
+  Total Login Events       & Metric      & siem-logs-* & Count \\
+  Total Failed Logins      & Metric      & siem-logs-* & Filter: \field{login\_result: failure} \\
+  Total Successful Logins  & Metric      & siem-logs-* & Filter: \field{login\_result: success} \\
+  Unique Attacker IPs      & Metric      & siem-logs-* & Unique count of \field{src\_ip.keyword} \\
+  Login Activity Over Time & Line chart  & siem-logs-* & X: \field{@timestamp}; split by \field{login\_result} \\
+  Top 10 Attacking IPs     & Bar (vert.) & siem-logs-* & Top values \field{src\_ip.keyword} size 10 \\
+  Top 10 Targeted Usernames& Bar (vert.) & siem-logs-* & Top values \field{username.keyword} size 10 \\
+  Event Type Distribution  & Donut       & siem-logs-* & Slice by \field{event\_type.keyword} size 10 \\
+  Severity Over Time       & Bar (stack) & siem-logs-* & Split by \field{severity.keyword} \\
+  Auth Method Breakdown    & Pie         & siem-logs-* & Slice by \field{auth\_method.keyword} \\
+  Audit Trail              & Table       & siem-logs-* & Cols: timestamp, ip, user, event, severity \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Layout:}
+\begin{lstlisting}[language=bash]
+Row 1: [Total Events] [Failed] [Successful] [Unique Attacker IPs]
+Row 2: [          Login Activity Over Time (full width)          ]
+Row 3: [Top 10 IPs (half width)]  [Top 10 Usernames (half width)]
+Row 4: [Event Type Donut (third)] [Auth Method Pie] [Severity Time]
+Row 5: [          Audit Trail Table (full width)                 ]
+\end{lstlisting}
+
+\subsection{Dashboard 2 — Alerts \& Threats}
+
+\begin{center}
+\begin{tabular}{p{4cm}p{2.5cm}p{2.5cm}p{4cm}}
+  \toprule
+  \textbf{Panel} & \textbf{Chart Type} & \textbf{Index} & \textbf{Key Config} \\
+  \midrule
+  Total Alerts             & Metric       & siem-alerts-* & Count \\
+  Critical Alerts          & Metric (red) & siem-alerts-* & Filter: \field{severity: CRITICAL} \\
+  High Alerts              & Metric (org.)& siem-alerts-* & Filter: \field{severity: HIGH} \\
+  Unique Threat IPs        & Metric       & siem-alerts-* & Unique count \field{src\_ip.keyword} \\
+  Alert Timeline           & Line chart   & siem-alerts-* & Split by \field{severity.keyword} \\
+  Alerts by Rule           & Bar (horiz.) & siem-alerts-* & Y: \field{rule.keyword}, X: count \\
+  Alert Severity Dist.     & Donut        & siem-alerts-* & Slice by \field{severity.keyword} \\
+  Top 10 Threat IPs        & Bar (horiz.) & siem-alerts-* & Y: \field{src\_ip.keyword} size 10 \\
+  Live Alert Feed          & Table        & siem-alerts-* & Cols: time, rule, severity, ip, message \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Layout:}
+\begin{lstlisting}[language=bash]
+Row 1: [Total Alerts] [Critical] [High] [Unique Threat IPs]
+Row 2: [          Alert Timeline (full width)              ]
+Row 3: [Alerts by Rule (half)]  [Severity Donut (half)    ]
+Row 4: [Top 10 Threat IPs (half)]  [                      ]
+Row 5: [          Live Alert Feed Table (full width)       ]
+\end{lstlisting}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Security Considerations}
+
+\begin{infobox}[Development vs.\ Production Security Posture]
+The current deployment is a development/demonstration environment.
+The considerations below describe the gap between the current state and
+a production-hardened deployment.
+\end{infobox}
+
+\subsection{Current Security Measures}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{No credentials in source code} — Elasticsearch URL is
+        passed via environment variable \texttt{ES\_URL}; no passwords are
+        hard-coded.
+  \item \textbf{Network isolation} — All containers communicate on a private
+        Docker bridge network (\texttt{siem-net}). Only ports 9200, 5601, and
+        5044 are exposed to localhost; no public exposure.
+  \item \textbf{Read-only mounts} — Filebeat configuration and log directories
+        are mounted as \texttt{:ro} (read-only) in the containers where write
+        access is not required.
+  \item \textbf{Automatic threat blocking} — HIGH and CRITICAL alerts
+        auto-populate the blocklist. In a production deployment this file would
+        feed an \texttt{iptables} / firewall rule set.
+\end{itemize}
+
+\subsection{Planned Production Hardening}
+
+\begin{center}
+\begin{tabular}{p{4cm}p{9cm}}
+  \toprule
+  \textbf{Area} & \textbf{Planned Measure} \\
+  \midrule
+  Authentication     & Keycloak OIDC for Admin / Analyst / Read-only roles; JWT bearer tokens on all API paths \\
+  Elasticsearch      & Enable \texttt{xpack.security}; TLS on all inter-container communication; RBAC per index \\
+  Secrets management & Docker Secrets or HashiCorp Vault for Elasticsearch credentials \\
+  OWASP ZAP          & Automated DAST scan on the Kibana surface and any API endpoints exposed externally \\
+  Log integrity      & WORM-style write-once log storage; cryptographic hash chaining on \file{a.log} \\
+  Blocklist enforcement & \texttt{cron} job that reads \file{blocklist.json} and inserts \texttt{iptables DROP} rules \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Testing \& Validation}
+
+\subsection{Testing Strategy}
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{3cm}p{6.5cm}}
+  \toprule
+  \textbf{Type} & \textbf{Tool} & \textbf{Scope} \\
+  \midrule
+  Pipeline integration & Docker Compose + Kibana Discover & Full end-to-end smoke test from log write to ES document \\
+  Alert rule validation & Forced scenarios in \file{logg\_gen.py} & All 5 detection rules triggered deterministically \\
+  Grok pattern testing  & Kibana Grok Debugger & Each of the 14 log format variants \\
+  Manual API testing    & \texttt{curl} / Postman & Elasticsearch \texttt{\_search} and \texttt{\_count} endpoints \\
+  Security scan         & OWASP ZAP & Kibana web surface \\
+  UI automation         & Selenium WebDriver & Dashboard load, metric card values \\
+  Code quality          & SonarQube & Python modules (\file{alerts.py}, \file{logg\_gen.py}) \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Sample Test Cases}
+
+\begin{longtable}{p{0.6cm}p{4cm}p{5cm}p{4cm}}
+  \toprule
+  \textbf{TC} & \textbf{Test} & \textbf{Steps} & \textbf{Expected} \\
+  \midrule\endhead
+  T1 & Grok parses failed login &
+    Append one \texttt{Failed password for invalid user} line to \file{a.log} &
+    Document in ES: \field{event\_type=failed\_password}, \field{severity=warning} \\
+  \midrule
+  T2 & Grok parses publickey login &
+    Append \texttt{Accepted publickey for alice ... ED25519 SHA256:...} &
+    Fields \field{key\_type=ED25519} and \field{key\_fingerprint} present \\
+  \midrule
+  T3 & BRUTE\_FORCE fires &
+    Run \texttt{scenario\_brute\_force()} (15 attempts, 1.5s) &
+    Alert in \field{siem-alerts-*} within 20s; \field{rule=BRUTE\_FORCE} \\
+  \midrule
+  T4 & ROOT\_LOGIN fires &
+    Append \texttt{Accepted password for root from 1.2.3.4} &
+    CRITICAL alert within 15s; IP added to \file{blocklist.json} \\
+  \midrule
+  T5 & Cooldown suppresses duplicate &
+    Fire same scenario twice within 30s &
+    Exactly one alert entry per IP per rule; second suppressed \\
+  \midrule
+  T6 & BURST\_ATTACK fires &
+    Run \texttt{scenario\_burst()} (35 attempts, 2s) &
+    Alert with \field{severity=CRITICAL}, \field{rule=BURST\_ATTACK} \\
+  \midrule
+  T7 & Blocklist auto-populated &
+    Trigger any HIGH rule &
+    IP entry appears in \file{blocklist.json} with timestamp and reason \\
+  \midrule
+  T8 & Kibana dashboard loads &
+    Open \texttt{localhost:5601}, navigate to SSH Logs Overview &
+    All 11 panels render with data; no ``No results'' panels \\
+  \midrule
+  T9 & Wildcard index covers all days &
+    Run generator across midnight &
+    Both \field{siem-logs-YYYY.MM.DD} and next-day index appear in dashboard \\
+  \midrule
+  T10 & Alert pipeline round-trip &
+    Trigger PREAUTH\_STORM; check Alerts dashboard &
+    Alert visible in \field{siem-alerts-*}; Live Alert Feed table shows entry \\
+  \bottomrule
+  \caption{Sample Test Cases}
+\end{longtable}
+
+\subsection{Bugs Found \& Fixed}
+
+\begin{center}
+\begin{tabular}{p{0.7cm}p{5cm}p{7.5cm}}
+  \toprule
+  \textbf{ID} & \textbf{Bug} & \textbf{Resolution} \\
+  \midrule
+  B1 & Grok \texttt{\_grokparsefailure} on all lines &
+    Service field character class \texttt{[\^{}[ ]+} was too greedy and matched
+    the bracket. Refined to \texttt{[\^{}[\textbackslash{}s]+} to stop at bracket or whitespace. \\
+  B2 & Filebeat silently fails to start &
+    Bind-mounted \file{filebeat.yml} triggered strict ownership check.
+    Added \texttt{filebeat -e -strict.perms=false} to Compose command. \\
+  B3 & Kibana shows no data after new day &
+    Dashboard was bound to daily index \texttt{siem-logs-2026.04.05}.
+    Replaced with wildcard \texttt{siem-logs-*} pattern. \\
+  B4 & Thousands of duplicate alerts per minute &
+    Every 10s poll re-fired rules for IPs still in the lookback window.
+    Added per-IP 60s cooldown dict \texttt{\_fired} in \file{alerts.py}. \\
+  B5 & \field{@timestamp} set to ingest time, not log time &
+    Logstash was not overwriting \field{@timestamp}. Added \texttt{date} filter
+    with \texttt{target => ``@timestamp''} and IST timezone. \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Demo \& Screencast}
+
+\subsection{Screencast Link}
+
+\begin{infobox}[Screencast]
+\textbf{Video Link:} \textit{[Insert your MP4 / YouTube / Google Drive link here]}\\
+\textbf{Duration:} $\approx$10 minutes \quad \textbf{Format:} MP4 with voiceover
+\end{infobox}
+
+\subsection{Timestamped Demo Script}
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{[0:00--1:00] Architecture overview}\\
+    Show the architecture flow diagram. Walk through the repository structure
+    in the terminal. Explain the unidirectional pipeline in one minute.
+  \item \textbf{[1:00--2:30] Starting the stack}\\
+    Run \texttt{docker compose up -d}. Show the health-check waiting loop for
+    Elasticsearch. Confirm all four containers are healthy with
+    \texttt{docker compose ps}. Open Kibana at \texttt{localhost:5601}.
+  \item \textbf{[2:30--4:30] Live log generation}\\
+    Run \texttt{python3 logg\_gen.py} in one terminal. Show the scrolling
+    output with legitimate logins, failed attempts, and forced scenarios.
+    Switch to Kibana Discover and show documents appearing in
+    \field{siem-logs-*} in real time. Point out parsed fields.
+  \item \textbf{[4:30--6:30] SSH Logs Overview dashboard}\\
+    Open Dashboard 1. Walk through each panel: metric row, attack timeline
+    (show the spike when a burst fires), top attacking IPs, event type donut,
+    severity heatmap, and the audit trail table. Filter to critical only using
+    the filter bar.
+  \item \textbf{[6:30--8:30] Alerts \& Threats dashboard}\\
+    In a second terminal run \texttt{python3 alerts.py}. Wait 10 seconds and
+    switch to Dashboard 2. Show the alert metric cards increment. Click the
+    Live Alert Feed table — point out BRUTE\_FORCE and ROOT\_LOGIN entries.
+    Show the severity donut and ``Alerts by Rule'' bar chart filling up.
+  \item \textbf{[8:30--9:30] Blocklist}\\
+    Open \file{logs/blocklist.json} in the terminal with \texttt{cat}.
+    Show auto-blocked IPs with timestamps and reasons. Explain how this
+    would feed \texttt{iptables} in production.
+  \item \textbf{[9:30--10:00] Wrap-up}\\
+    Summarise what was demonstrated. Mention Keycloak RBAC, GeoIP enrichment,
+    and ML anomaly detection as the next planned steps.
+\end{enumerate}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Lessons Learned \& Future Work}
+
+\subsection{What Worked Well}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{ELK pipeline reliability} — Once the Grok patterns were
+        correct, the pipeline required zero manual intervention. Logs flowed
+        end-to-end without restarts, service interruptions, or data loss.
+  \item \textbf{Feedback-loop architecture} — Writing alerts as JSON lines to
+        a log file and re-ingesting them via Filebeat was an elegant design.
+        The alert data became queryable in Kibana alongside raw logs without
+        any extra tooling or a second Elasticsearch client in the alert engine.
+  \item \textbf{Forced scenarios in the log generator} — Embedding
+        deterministic alert-triggering events directly in \file{logg\_gen.py}
+        made rule validation trivial. No separate test harness was needed.
+  \item \textbf{Docker Compose health-checks} — The
+        \texttt{condition: service\_healthy} dependency prevented hours of
+        race-condition debugging. Every run starts cleanly in the correct
+        order regardless of machine speed.
+  \item \textbf{Daily index strategy} — Using \texttt{siem-logs-YYYY.MM.dd}
+        indices made data retention simple (delete old indices without
+        rebuilding) and gave the dashboard a natural time-based structure.
+\end{itemize}
+
+\subsection{What Failed / Challenges Faced}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Grok pattern iteration} — Getting all 14 SSH log variants
+        parsed correctly required over twenty iterations in the Kibana Grok
+        Debugger. The most problematic: services with hyphens
+        (\texttt{systemd-logind}) and PAM lines with semicolon-separated
+        key=value pairs.
+  \item \textbf{Year in timestamp} — Standard SSH syslog format omits the
+        year. We added a year prefix in \file{logg\_gen.py} and built a
+        matching Logstash date pattern. Testing across midnight revealed an
+        edge case where the year rolled forward in the log but the date filter
+        used the previous year.
+  \item \textbf{Filebeat strict permissions} — The bind-mounted
+        \file{filebeat.yml} failed a silent ownership security check, causing
+        Filebeat to start and immediately exit. The error was only visible via
+        \texttt{docker logs siem-filebeat} and took significant time to
+        diagnose.
+  \item \textbf{Alert cooldown design} — Initial testing without a cooldown
+        produced 500+ duplicate alerts per minute as the 10s poll cycle
+        repeatedly saw the same IPs in the 120s lookback window. The
+        in-memory \texttt{\_fired} dict with COOLDOWN=60 solved this but
+        required careful testing to ensure legitimate new bursts from the same
+        IP still triggered alerts after the cooldown expired.
+  \item \textbf{Kibana index pattern scope} — Early dashboards were built
+        against the daily index pattern, which required manual recreation every
+        day. Switching to wildcard patterns late in development meant
+        rebuilding several visualisations.
+\end{itemize}
+
+\subsection{Top 3 Future Features}
+
+\begin{center}
+\begin{tabular}{p{0.4cm}p{3.8cm}p{7.5cm}p{1.8cm}}
+  \toprule
+  \textbf{\#} & \textbf{Feature} & \textbf{Description} & \textbf{Effort} \\
+  \midrule
+  1 & Keycloak RBAC &
+    Integrate Keycloak for Admin / Analyst / Read-only roles.
+    Protect Kibana with OIDC. Admin-only access to blocklist management
+    and alert acknowledgement.
+    & 2 weeks \\
+  \midrule
+  2 & GeoIP Map Visualisation &
+    Add the Logstash GeoIP filter to enrich \field{src\_ip} with country,
+    city, and lat/lon coordinates. Display attacker origins as a heat map
+    on Kibana Maps layer. Instantly shows geographic attack origin patterns.
+    & 1 week \\
+  \midrule
+  3 & ML Anomaly Detection &
+    Use Elasticsearch Machine Learning jobs to detect: unusual login times
+    for a known user, impossible travel (same user, two IPs, short delta),
+    and off-hours CRON executions. Feeds into a new ``Anomaly'' alert rule.
+    & 3--4 weeks \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Hindsight — Tips for Future Teams}
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Design your log format before writing any pipeline code.}
+        Every field you want in Elasticsearch must be extractable by Grok.
+        Changing the log format mid-project cascades into new patterns,
+        re-indexing, and broken Kibana mappings simultaneously.
+  \item \textbf{Use the Kibana Grok Debugger obsessively.}
+        It gives immediate feedback on pattern matches without restarting a
+        Logstash container. Every pattern in \file{siem.conf} was developed
+        and validated here first.
+  \item \textbf{Create wildcard index patterns on day one.}
+        \texttt{siem-logs-*} instead of \texttt{siem-logs-2026.04.10}.
+        A daily pattern means rebuilding your dashboards every single day
+        you run the project.
+  \item \textbf{Read container logs before assuming the issue is in your code.}
+        Three of our five bugs (B2, B3, B4) were only visible in
+        \texttt{docker logs}. \texttt{docker logs -f siem-filebeat} and
+        \texttt{docker logs -f siem-logstash} should be your first debugging
+        tools.
+\end{enumerate}
+
+\subsection{AI Integration Opportunities}
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Dynamic alert thresholds} — An ML model trained on historical
+        login patterns could set BRUTE\_FORCE thresholds per-server and
+        per-time-of-day, eliminating false positives during legitimate
+        high-traffic periods (e.g., Monday morning login bursts).
+  \item \textbf{Natural language log search} — An LLM interface over the
+        Elasticsearch API would let an admin query:
+        \textit{``Show me all root logins from non-internal IPs last week''}
+        without knowing Kibana KQL syntax.
+  \item \textbf{Automated incident summaries} — When an alert fires, an LLM
+        could generate a one-paragraph incident report: who, what IP, how many
+        attempts, usernames targeted, similar past incidents, recommended
+        response.
+  \item \textbf{Grok pattern generation} — During development, an AI assistant
+        could generate and iterate Grok patterns from sample log lines,
+        replacing the most time-consuming part of the project.
+\end{itemize}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Team Contribution Statement}
+
+\begin{infobox}[Note to Markers]
+Replace the placeholder names and contribution details below with your actual
+team members before submission. The commit history on GitHub provides a
+verifiable audit trail of individual contributions.
+\end{infobox}
+
+\begin{longtable}{p{2.8cm}p{4cm}p{6.5cm}}
+  \toprule
+  \textbf{Member} & \textbf{Primary Area} & \textbf{Contributions} \\
+  \midrule\endhead
+  \textit{[Name 1]} & Infrastructure \& Pipeline &
+    \file{docker-compose.yml} setup, Filebeat configuration, Logstash Grok
+    pipeline design (all 14 patterns), Elasticsearch index management,
+    Docker health-check configuration. \\
+  \midrule
+  \textit{[Name 2]} & Log Generator &
+    \file{logg\_gen.py}: fixed IP scheduler, random pools, burst state machine,
+    forced alert scenarios, all 14 log line builder functions.
+    \file{log\_generator.py} (initial prototype). \\
+  \midrule
+  \textit{[Name 3]} & Alert Engine \& Blocklist &
+    \file{alerts.py}: all 5 detection rules, cooldown logic, blocklist writer,
+    alert JSON schema design. Tuned \texttt{POLL\_INTERVAL},
+    \texttt{LOOKBACK}, and \texttt{COOLDOWN} values. \\
+  \midrule
+  \textit{[Name 4]} & Dashboards \& Testing &
+    Kibana SSH Logs Overview dashboard (11 panels), Alerts \& Threats dashboard
+    (9 panels), index pattern management, Selenium test scripts, OWASP ZAP
+    security scan, SonarQube code quality review. \\
+  \bottomrule
+  \caption{Team Contributions}
+\end{longtable}
+
+\subsection*{Coordination Approach}
+
+\begin{itemize}[leftmargin=2em]
+  \item Weekly standups via \textit{[platform]} — 30-minute sessions to
+        review what was completed, what is blocked, and what is next.
+  \item \textbf{GitHub Issues} used for bug tracking with assignees, labels
+        (\texttt{bug}, \texttt{enhancement}, \texttt{pipeline}), and
+        milestone assignments.
+  \item \textbf{Feature branches} merged to \texttt{main} via pull requests
+        requiring at least one team-member approval before merge.
+  \item Commit messages follow the format
+        \texttt{[component] short description} for easy filtering in
+        \texttt{git log}.
+\end{itemize}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Appendix}
+
+\subsection{A — Full Detection Rules Reference}
+
+\begin{center}
+\begin{tabular}{p{4cm}p{1.8cm}p{2.8cm}p{2cm}p{3cm}}
+  \toprule
+  \textbf{Rule} & \textbf{Window} & \textbf{Threshold} & \textbf{Severity} & \textbf{Auto Action} \\
+  \midrule
+  BRUTE\_FORCE        & 60s  & $\geq 10$ failed/IP   & HIGH     & Alert + Block IP \\
+  BURST\_ATTACK       & 60s  & $\geq 30$ failed/IP   & CRITICAL & Alert + Block IP \\
+  ROOT\_LOGIN         & 120s & Any root acceptance   & CRITICAL & Alert only \\
+  MAX\_AUTH\_EXCEEDED & 120s & Any occurrence        & HIGH     & Alert only \\
+  PREAUTH\_STORM      & 60s  & $\geq 5$ preauth/IP   & MEDIUM   & Alert only \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{B — Filebeat Input Configuration}
+
+\begin{lstlisting}[language=bash, caption=filebeat/filebeat.yml]
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths: [/logs/a.log]
+    scan_frequency: 5s
+    close_inactive: 10s
+    fields:
+      log_type: auth
+    fields_under_root: true
+
+  - type: log
+    enabled: true
+    paths: [/logs/alerts.log]
+    scan_frequency: 5s
+    close_inactive: 10s
+    json.keys_under_root: true
+    json.add_error_key: true
+    fields:
+      log_type: alert
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+\end{lstlisting}
+
+\subsection{C — Docker Compose Service Summary}
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{2cm}p{3cm}p{4.5cm}}
+  \toprule
+  \textbf{Container} & \textbf{Port} & \textbf{Image} & \textbf{Health Check} \\
+  \midrule
+  siem-elasticsearch & 9200  & elasticsearch:8.13.0 & \texttt{curl \_cluster/health} \\
+  siem-kibana        & 5601  & kibana:8.13.0        & Depends on ES healthy \\
+  siem-logstash      & 5044  & logstash:8.13.0      & Depends on ES healthy \\
+  siem-filebeat      & —     & filebeat:8.13.0      & Depends on logstash \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{D — Kibana Dashboard Panels Summary}
+
+\begin{center}
+\small
+\begin{tabular}{p{3cm}p{4cm}p{2.5cm}p{3.5cm}}
+  \toprule
+  \textbf{Dashboard} & \textbf{Panel Name} & \textbf{Type} & \textbf{Index} \\
+  \midrule
+  Logs Overview & Total / Failed / Successful / Unique IPs & Metric ×4 & siem-logs-* \\
+  Logs Overview & Login Activity Over Time & Line & siem-logs-* \\
+  Logs Overview & Top 10 Attacking IPs & Bar (vert.) & siem-logs-* \\
+  Logs Overview & Top 10 Targeted Usernames & Bar (vert.) & siem-logs-* \\
+  Logs Overview & Event Type Distribution & Donut & siem-logs-* \\
+  Logs Overview & Severity Over Time & Bar (stack) & siem-logs-* \\
+  Logs Overview & Auth Method Breakdown & Pie & siem-logs-* \\
+  Logs Overview & Audit Trail & Table & siem-logs-* \\
+  Alerts \& Threats & Total / Critical / High / Unique IPs & Metric ×4 & siem-alerts-* \\
+  Alerts \& Threats & Alert Timeline & Line & siem-alerts-* \\
+  Alerts \& Threats & Alerts by Rule & Bar (horiz.) & siem-alerts-* \\
+  Alerts \& Threats & Alert Severity Distribution & Donut & siem-alerts-* \\
+  Alerts \& Threats & Top 10 Threat IPs & Bar (horiz.) & siem-alerts-* \\
+  Alerts \& Threats & Live Alert Feed & Table & siem-alerts-* \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{E — Installation Quick Reference}
+
+\begin{lstlisting}[language=bash, caption=Full stack startup commands]
+# Prerequisites: Docker Desktop running, Python 3 installed
+# Recommended: 8 GB RAM allocated to Docker
+
+# Step 1 — Start the ELK stack (wait ~60s for Elasticsearch)
+cd siem-project
+docker compose up -d
+docker compose ps   # verify all containers healthy
+
+# Step 2 — Generate realistic SSH log traffic
+python3 logg_gen.py
+
+# Step 3 — Start the alert detection engine
+python3 alerts.py
+
+# Step 4 — Open Kibana
+open http://localhost:5601
+# Navigate to: Stack Management > Index Patterns
+# Create: siem-logs-*   (time field: @timestamp)
+# Create: siem-alerts-* (time field: @timestamp)
+# Then: Dashboards > Create dashboard > follow Section 5 design
+
+# Useful debugging commands
+docker logs -f siem-filebeat    # watch Filebeat shipping lines
+docker logs -f siem-logstash    # watch Logstash parsing output
+cat logs/blocklist.json         # view auto-blocked IPs
+\end{lstlisting}
+
+\vfill
+\begin{center}
+  \textcolor{accent}{\rule{0.6\linewidth}{0.4pt}}\\[0.6em]
+  {\small\textcolor{gray}{SIEM Project — Software Engineering Submission — \today}}
+\end{center}
+
+\end{document}
